@@ -1,0 +1,20 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "9LimnDSHQFH54Jf-17YVs"
+uri = "file://API.md"
+type = "text"
+title = "API Documentation"
+
+[[outputs]]
+id = "tnNTnfn71vXKi-QAT6Svu"
+uri = "file://PUBLIC_API.md"
+type = "text"
+title = "Public API (for consuming websites)"
+
+[[outputs]]
+id = "NRtlHJASBHdjWSF7QnJTz"
+uri = "file://ADMIN_API.md"
+type = "text"
+title = "Admin API (internal dashboard)"

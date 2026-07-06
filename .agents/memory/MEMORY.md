@@ -1,0 +1,2 @@
+- [Next.js scaffolding in non-empty Replit dir](nextjs-scaffold-nonempty-dir.md) — create-next-app refuses if `.replit`/`.git`/etc exist; scaffold in /tmp then copy in.
+- [shadcn CLI init unreliable in sandbox](shadcn-cli-sandbox.md) — `shadcn init` prompts interactively and hangs/errors on `-b` enum; hand-write shadcn-style components instead.
