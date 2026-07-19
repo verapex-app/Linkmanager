@@ -25,6 +25,7 @@ import {
   Copy,
   ExternalLink as ExternalLinkIcon,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 import type { Website, Link as LinkModel } from "@/db/schema";
 import { Switch } from "@/components/ui/switch";
@@ -52,6 +53,7 @@ export default function WebsiteDetailPage({
   const [formOpen, setFormOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LinkModel | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LinkModel | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -86,7 +88,9 @@ export default function WebsiteDetailPage({
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    const res = await fetch(`/api/links/${deleteTarget.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/links/${deleteTarget.id}`, {
+      method: "DELETE",
+    });
     if (res.ok) {
       toast.success("Link deleted");
       setLinks((prev) => prev.filter((l) => l.id !== deleteTarget.id));
@@ -121,12 +125,34 @@ export default function WebsiteDetailPage({
     }
   }
 
+  async function forceSync() {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/admin/revalidate", { method: "POST" });
+      if (res.ok) {
+        toast.success("Production cache cleared — changes are live instantly.");
+      } else {
+        toast.error("Failed to clear cache");
+      }
+    } catch {
+      toast.error("Failed to clear cache");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   if (loading) {
-    return <div className="text-neutral-400 py-12 text-center">Loading...</div>;
+    return (
+      <div className="text-neutral-400 py-12 text-center">Loading...</div>
+    );
   }
 
   if (!website) {
-    return <div className="text-neutral-400 py-12 text-center">Website not found.</div>;
+    return (
+      <div className="text-neutral-400 py-12 text-center">
+        Website not found.
+      </div>
+    );
   }
 
   return (
@@ -142,25 +168,43 @@ export default function WebsiteDetailPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold text-neutral-900">{website.name}</h1>
-              <Badge variant={website.status === "active" ? "success" : "secondary"}>
+              <h1 className="text-2xl font-semibold text-neutral-900">
+                {website.name}
+              </h1>
+              <Badge
+                variant={website.status === "active" ? "success" : "secondary"}
+              >
                 {website.status}
               </Badge>
             </div>
             <p className="text-sm text-neutral-500 mt-1">
-              /{website.slug} {website.domain ? `· ${website.domain}` : ""}
+              /{website.slug}{" "}
+              {website.domain ? `· ${website.domain}` : ""}
             </p>
           </div>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => {
-              setEditingLink(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            Add Link
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={forceSync}
+              disabled={syncing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+              />
+              {syncing ? "Syncing…" : "Force Sync to Production"}
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setEditingLink(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Add Link
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -182,7 +226,9 @@ export default function WebsiteDetailPage({
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="py-8 text-center text-neutral-400">No links found.</Card>
+        <Card className="py-8 text-center text-neutral-400">
+          No links found.
+        </Card>
       ) : (
         <>
           {/* Mobile card list */}
@@ -194,17 +240,27 @@ export default function WebsiteDetailPage({
                     <Badge variant="outline">
                       {PLATFORM_LABELS[link.platform] || link.platform}
                     </Badge>
-                    <p className="font-medium text-neutral-900 mt-1">{link.name}</p>
+                    <p className="font-medium text-neutral-900 mt-1">
+                      {link.name}
+                    </p>
                   </div>
                   <Switch
                     checked={link.status === "active"}
                     onCheckedChange={() => toggleStatus(link)}
                   />
                 </div>
-                <p className="text-sm text-neutral-500 mt-1 break-all">{link.url}</p>
-                <p className="text-sm text-neutral-500 mt-1">Priority: {link.priority}</p>
+                <p className="text-sm text-neutral-500 mt-1 break-all">
+                  {link.url}
+                </p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Priority: {link.priority}
+                </p>
                 <div className="flex justify-end gap-1 mt-2 border-t border-neutral-100 pt-2">
-                  <Button variant="ghost" size="icon" onClick={() => copyLink(link.url)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyLink(link.url)}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" asChild>
@@ -222,7 +278,11 @@ export default function WebsiteDetailPage({
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(link)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteTarget(link)}
+                  >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
@@ -255,7 +315,9 @@ export default function WebsiteDetailPage({
                     <TableCell className="text-neutral-500 max-w-xs truncate">
                       {link.url}
                     </TableCell>
-                    <TableCell className="text-neutral-500">{link.priority}</TableCell>
+                    <TableCell className="text-neutral-500">
+                      {link.priority}
+                    </TableCell>
                     <TableCell>
                       <Switch
                         checked={link.status === "active"}
@@ -264,11 +326,19 @@ export default function WebsiteDetailPage({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => copyLink(link.url)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => copyLink(link.url)}
+                        >
                           <Copy className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" asChild>
-                          <a href={link.url} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             <ExternalLinkIcon className="h-4 w-4" />
                           </a>
                         </Button>
@@ -282,7 +352,11 @@ export default function WebsiteDetailPage({
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(link)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTarget(link)}
+                        >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>

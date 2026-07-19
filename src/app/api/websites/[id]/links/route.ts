@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { links, websites } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         notes: parsed.data.notes || null,
       })
       .returning();
+
+    revalidatePath(`/api/public/websites/${website[0].slug}/links`);
 
     return NextResponse.json({ link: created }, { status: 201 });
   } catch (error) {
