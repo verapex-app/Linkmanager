@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { websites, links, apiRequests, linkClicks } from "@/db/schema";
-import { and, eq, sql, gte, desc } from "drizzle-orm";
+import { and, eq, sql, gte } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -74,7 +74,7 @@ export async function GET() {
       .innerJoin(websites, eq(linkClicks.websiteId, websites.id))
       .where(gte(linkClicks.clickedAt, last7d))
       .groupBy(linkClicks.websiteId, websites.name, websites.slug)
-      .orderBy(desc(sql`count(*)`))
+      .orderBy(sql`count(*) desc`)
       .limit(5);
 
     const topWebsitesByRequests = await db
@@ -88,7 +88,7 @@ export async function GET() {
       .innerJoin(websites, eq(apiRequests.websiteId, websites.id))
       .where(gte(apiRequests.requestedAt, last7d))
       .groupBy(apiRequests.websiteId, websites.name, websites.slug)
-      .orderBy(desc(sql`count(*)`))
+      .orderBy(sql`count(*) desc`)
       .limit(5);
 
     return NextResponse.json({

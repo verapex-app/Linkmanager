@@ -185,7 +185,10 @@ export default function DashboardOverviewPage() {
   useEffect(() => {
     fetch("/api/stats")
       .then((res) => res.json())
-      .then((data) => setStats(data))
+      .then((data) => {
+        if (data && data.clicks && data.requests) setStats(data);
+      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
